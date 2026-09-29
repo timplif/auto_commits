@@ -1,0 +1,98 @@
+name: Human-like Commits
+
+on:
+  schedule:
+    - cron: '0 7 * * *'   # 10:00 МСК — один запуск в день
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  human-commits:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Setup Git
+        run: |
+          git config --local user.email "tima.privalov2008@gmail.com"
+          git config --local user.name "timplif"
+
+      - name: Generate human-like commits
+        run: |
+          python3 << 'PYTHON_SCRIPT'
+          import random
+          import subprocess
+          import os
+          from datetime import datetime, timedelta
+
+          today = datetime.now()
+          
+          # Случайное количество коммитов от 1 до 10
+          num_commits = random.randint(1, 10)
+          print(f" Сегодня будет {num_commits} коммит(ов)")
+          
+          # Сообщения коммитов (реалистичные)
+          messages = [
+              "fix: исправил баг в авторизации",
+              "feat: добавил валидацию формы",
+              "refactor: почистил код в модуле utils",
+              "docs: обновил README",
+              "test: написал тесты для API",
+              "style: форматирование кода",
+              "chore: обновил зависимости",
+              "fix: поправил отступы",
+              "feat: добавил кнопку сохранения",
+              "fix: исправил ошибку в SQL запросе",
+              "refactor: вынес функцию в отдельный модуль",
+              "docs: добавил комментарии",
+              "feat: реализовал фильтрацию",
+              "fix: hotfix на проде",
+              "test: добавил unit-тесты",
+              "feat: добавил обработку исключений",
+              "refactor: оптимизировал запрос к БД",
+              "fix: исправил утечку памяти",
+              "feat: добавил кэширование",
+              "docs: написал документацию к API",
+          ]
+          
+          # Создаём папку src
+          os.makedirs("src", exist_ok=True)
+          
+          # Генерируем коммиты с разными временными метками
+          base_time = today.replace(hour=9, minute=0, second=0, microsecond=0)
+          
+          for i in range(num_commits):
+              # Случайное время в течение рабочего дня (9:00 - 21:00)
+              random_minutes = random.randint(0, 720)  # 12 часов = 720 минут
+              commit_time = base_time + timedelta(minutes=random_minutes)
+              
+              # Выбираем случайное сообщение
+              msg = random.choice(messages)
+              
+              # Создаём файл с изменениями
+              filename = f"src/changes_{commit_time.strftime('%H%M')}_{i}.txt"
+              with open(filename, "w") as f:
+                  f.write(f"// {msg}\n// Time: {commit_time.strftime('%Y-%m-%d %H:%M')}\n")
+              
+              # Добавляем и коммитим с нужной датой
+              subprocess.run(["git", "add", "."], check=True)
+              
+              date_str = commit_time.strftime('%Y-%m-%dT%H:%M:%S')
+              subprocess.run([
+                  "git", "commit",
+                  "-m", msg,
+                  "--date", date_str,
+                  "--author=timplif <tima.privalov2008@gmail.com>"
+              ], check=True)
+              
+              print(f"✅ Коммит #{i+1}: {msg} (время: {commit_time.strftime('%H:%M')})")
+          
+          # Один push в конце
+          subprocess.run(["git", "push", "--force"], check=True)
+          print("🚀 Все коммиты запушены!")
+          PYTHON_SCRIPT
